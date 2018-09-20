@@ -1,7 +1,9 @@
 from tkinter import Canvas
 
+# class to hold metadata and to draw tile
+
 class Rectangle:
-    def __init__(self, canvas, color, pos, size, cost=0.5):
+    def __init__(self, canvas, color, pos, size, cost=1):
         self.canvas = canvas
         self.id = canvas.create_rectangle(pos[0], pos[1], size + pos[0], size + pos[1], fill=color)
         self.cost = cost

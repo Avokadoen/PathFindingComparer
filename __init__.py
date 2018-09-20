@@ -15,9 +15,12 @@ def djikstraInit(board, canvas):
 def aStarInit(board, canvas):
     board.runAStar(canvas)
 
+def breadthInit(board, canvas):
+    board.runBreadthFirst(canvas)
+
 def main():
     tk = Tk()
-    tk.title = "Game"
+    tk.title = "search algorithms demo"
     #tk.resizable(0,0)
     tk.wm_attributes("-topmost", 1)
 
@@ -28,11 +31,13 @@ def main():
 
     board = Board(canvas, "board-2-1.txt")
 
+    # some tk buttons to init the algorithms
+    breadthB = Button(tk, text="breadth first", command=partial(breadthInit, board, canvas))
+    breadthB.place(anchor="nw", x=100, y=300)
     djikB = Button(tk, text="djikstra's", command=partial(djikstraInit, board, canvas))
-    djikB.place(anchor="nw", x=screenWidth/3, y=300)
+    djikB.place(anchor="nw", x=200, y=300)
     aStarB = Button(tk, text="A* ", command=partial(aStarInit, board, canvas))
     aStarB.place(anchor="nw", x=300, y=300)
-
 
     menubar = Menu(tk)
 
@@ -41,6 +46,7 @@ def main():
     programmenu.add_command(label="Exit", command=tk.quit)
     menubar.add_cascade(label="Program", menu=programmenu)
 
+    # load each file in boards directory and list them in a meny
     levelsmenu = Menu(menubar, tearoff=0)
     levelFolder = Path("./boards/")
     levelsPaths = list(levelFolder.glob('./board*'))
@@ -49,11 +55,6 @@ def main():
     for path in levelsPaths:
         _, finalPath = str(path).split("/")
         levelsmenu.add_command(label=finalPath, command=partial(board.createCurrentBoard, canvas, finalPath))
-
-
-
-
-
     menubar.add_cascade(label="Levels", menu=levelsmenu)
 
     # display the menu
@@ -61,5 +62,6 @@ def main():
 
     tk.mainloop()
 
+# application entry point
 if __name__ == '__main__':
     main()

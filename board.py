@@ -1,5 +1,8 @@
 from rectangle import Rectangle
 import math
+import queue
+
+# class to hold all of the world state and to compute path
 
 class Board:
     def __init__(self, canvas, boardpath):
@@ -7,13 +10,32 @@ class Board:
         self.filepath = boardpath
         self.createCurrentBoard(canvas , boardpath)
 
-
     def createNoCost(self, canvas, pos, size, color):
         self.rectangle.append(Rectangle(canvas, color, [pos[0]*size, pos[1]*size], size))
 
     def createCost(self, canvas, pos, size, color, cost):
         self.rectangle.append(Rectangle(canvas, color, [pos[0]*size, pos[1]*size], size, cost=cost))
 
+    # used to travers from endpoint to start and draw path red
+    def createFinalPath(self, current, startIndex):
+        while current != startIndex:
+            self.rectangle[current].updateOutline("red")
+            current = self.rectangle[current].getParent()
+
+    # find valid adjucent tiles
+    def createNeighbours(self, current):
+        neighbours=[]
+        if((current % self.width) >= 1):
+            neighbours.append(current-1)
+        if(current % self.width != self.width-1 or current == 0):
+            neighbours.append(current+1)
+        if(current / self.width < (self.height-1)):
+            neighbours.append(current+self.width)
+        if(current / self.width >= 1):
+            neighbours.append(current-self.width)
+        return neighbours
+
+    # load board from file using board name
     def createCurrentBoard(self, canvas, boardpath):
 
         del self.rectangle[:]
@@ -25,11 +47,11 @@ class Board:
         self.width = len(fileContent[0]) - 1 #TODO: better way than -1?
         self.height = len(fileContent)
 
-        print("{0}, {1}".format(self.width, self.height))
         x = 0
         y = 0
         size = 500/self.width
 
+        # loop each character and create a rectangle that will represent said character
         while(y < self.height):
             while(x < self.width):
                 if boardpath[6] == "1":
@@ -61,22 +83,13 @@ class Board:
             x = 0;
             y += 1
 
-    '''
-    source: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-    - Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
-    - Assign to every node a tentative distance value: set it to zero for our initial node and to infinity for all other nodes. Set the initial node as current.
-    - For the current node, consider all of its unvisited neighbors and calculate their tentative distances through the current node.
-    Compare the newly calculated tentative distance to the current assigned value and assign the smaller one. For example, if the current node A is marked with a distance of 6, and the edge connecting it with a neighbor B has length 2, then the distance to B through A will be 6 + 2 = 8. If B was previously marked with a distance greater than 8 then change it to 8. Otherwise, keep the current value.
-    - When we are done considering all of the unvisited neighbors of the current node, mark the current node as visited and remove it from the unvisited set. A visited node will never be checked again.
-    - If the destination node has been marked visited (when planning a route between two specific nodes) or if the smallest tentative distance among the nodes in the unvisited set is infinity (when planning a complete traversal; occurs when there is no connection between the initial node and remaining unvisited nodes), then stop. The algorithm has finished.
-    - Otherwise, select the unvisited node that is marked with the smallest tentative distance, set it as the new "current node", and go back to step 3.
-    '''
+    # Source: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+    # uses the current board state to compute a path with djikstra algorithm
     def runDjikstra(self, canvas):
         self.createCurrentBoard(canvas, self.filepath)
         unvisited = []
         current = 0
         startIndex = 0
-        print(len(self.rectangle))
         for i in range(len(self.rectangle)):
             if(canvas.itemcget(self.rectangle[i].getID(), "fill") != "black"):
                 unvisited.append(i)
@@ -92,37 +105,14 @@ class Board:
         while canvas.itemcget(self.rectangle[current].getID(), "fill") != "#42f456" and self.rectangle[current].getDistance() < 999999:
             self.rectangle[current].updateOutline("yellow")
 
+            neighbours = self.createNeighbours(current)
+
+            for neighbour in neighbours:
             # if left node is cheaper to travers from current
-            if(current-1 in unvisited):
-                if(((current % self.width) >= 1) and
-                    (self.rectangle[current-1].getDistance() > self.rectangle[current-1].getCost() + self.rectangle[current].getDistance())):
-
-                    self.rectangle[current-1].updateDistance(self.rectangle[current-1].getCost() + self.rectangle[current].getDistance(), current)
-                    print("left true")
-
-            # if right node is cheaper to travers from current
-            if(current+1 in unvisited):
-                if((current % self.width != indexWidth or current == 0) and
-                    (self.rectangle[current+1].getDistance() > self.rectangle[current+1].getCost() + self.rectangle[current].getDistance())):
-
-                    self.rectangle[current+1].updateDistance(self.rectangle[current+1].getCost() + self.rectangle[current].getDistance(),current)
-                    print("right true")
-
-            # if down node is cheaper to travers from current
-            if(current+self.width in unvisited):
-                if((current / self.width <= indexHeight) and
-                    (self.rectangle[current+self.width].getDistance() > self.rectangle[current+self.width].getCost() + self.rectangle[current].getDistance())):
-
-                    self.rectangle[current+self.width].updateDistance(self.rectangle[current+self.width].getCost() + self.rectangle[current].getDistance(), current)
-                    print("down true")
-
-            # if up node is cheaper to travers from current
-            if(current-self.width in unvisited):
-                if((current / self.width >= 1) and
-                    (self.rectangle[current-self.width].getDistance() > self.rectangle[current-self.width].getCost() + self.rectangle[current].getDistance())):
-
-                    self.rectangle[current-self.width].updateDistance(self.rectangle[current-self.width].getCost() + self.rectangle[current].getDistance(), current)
-                    print("up true")
+                if(neighbour in unvisited):
+                    if(self.rectangle[neighbour].getDistance() > self.rectangle[neighbour].getCost() + self.rectangle[current].getDistance()):
+                        self.rectangle[neighbour].updateDistance(self.rectangle[neighbour].getCost() + self.rectangle[current].getDistance(), current)
+                        self.rectangle[neighbour].updateOutline("purple")
 
             unvisited.remove(current)
             visited.append(current)
@@ -133,10 +123,10 @@ class Board:
                     newCurrentCost = self.rectangle[i].getDistance()
                     current = i
 
-        while current != startIndex:
-            self.rectangle[current].updateOutline("red")
-            current = self.rectangle[current].getParent()
+        self.createFinalPath(current, startIndex)
 
+    # Sources: https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
+    # uses the current board state to compute a path with a* algorithm
     def runAStar(self, canvas):
 
         self.createCurrentBoard(canvas, self.filepath)
@@ -144,7 +134,6 @@ class Board:
         current = 0
         startIndex = 0
         goalIndex = 0
-        print(len(self.rectangle))
         for i in range(len(self.rectangle)):
             if(canvas.itemcget(self.rectangle[i].getID(), "fill") == "black"):
                 illegalTiles.append(i)
@@ -155,19 +144,21 @@ class Board:
             elif(canvas.itemcget(self.rectangle[i].getID(), "fill") == "#42f456"):
                 goalIndex = i
 
+        # foreach rectangle, compute a heuristic
         for i in range(len(self.rectangle)):
             x = goalIndex % self.width - i % self.width
             y = (int)(goalIndex / self.width) - (int)(i / self.width)
-            self.rectangle[i].updateHeuristic(math.sqrt(math.pow(x, 2) + math.pow(y, 2)))
+            # we use 2.5 as a modifier to make it balanced compared to cost
+            self.rectangle[i].updateHeuristic(math.sqrt(math.pow(x, 2) + math.pow(y, 2))*2.5)
 
         closedTiles = []
         indexWidth = self.width - 1
         indexHeight = self.height - 1
-
         openTiles = []
         openTiles.append(current)
 
         while openTiles:
+            # record tile we have locked
             self.rectangle[current].updateOutline("yellow")
 
             newFunctionCost = 999999*2
@@ -182,25 +173,57 @@ class Board:
             openTiles.remove(current)
             closedTiles.append(current)
 
-            neighbours = []
-
-            if((current % self.width) >= 1):
-                neighbours.append(current-1)
-            if(current % self.width != indexWidth or current == 0):
-                neighbours.append(current+1)
-            if(current / self.width <= indexHeight):
-                neighbours.append(current+self.width)
-            if(current / self.width >= 1):
-                neighbours.append(current-self.width)
+            neighbours = self.createNeighbours(current)
 
             for neighbour in neighbours:
                  if( not (neighbour in illegalTiles or neighbour in closedTiles)):
                          if(not (neighbour in openTiles)):
                              openTiles.append(neighbour)
-                             self.rectangle[current].updateOutline("purple")
+                             self.rectangle[neighbour].updateOutline("purple")
+
+                         # if new path is cheaper, update path cost and parent
                          if(self.rectangle[neighbour].getDistance() > self.rectangle[current].getDistance() + self.rectangle[neighbour].getCost()):
                              self.rectangle[neighbour].updateDistance(self.rectangle[current].getDistance() + self.rectangle[neighbour].getCost(), current)
 
-        while current != startIndex:
-            self.rectangle[current].updateOutline("red")
-            current = self.rectangle[current].getParent()
+        self.createFinalPath(current, startIndex)
+
+    # Soruces: https://en.wikipedia.org/wiki/Breadth-first_search#Pseudocode
+    #uses the current board state to compute a path with breadth first algorithm
+    def runBreadthFirst(self, canvas):
+        self.createCurrentBoard(canvas, self.filepath)
+        closedTiles = []
+        current = 0
+        startIndex = 0
+        goalIndex = 0
+        for i in range(len(self.rectangle)):
+            if(canvas.itemcget(self.rectangle[i].getID(), "fill") == "black"):
+                closedTiles.append(i)
+            elif(canvas.itemcget(self.rectangle[i].getID(), "fill") == "red"):
+                self.rectangle[i].updateDistance(0, i)
+                current = i
+                startIndex = i
+            elif(canvas.itemcget(self.rectangle[i].getID(), "fill") == "#42f456"):
+                goalIndex = i
+
+        openTilesList = []
+        openTilesList.append(current)
+        while openTilesList:
+            current = openTilesList.pop(0)
+            self.rectangle[current].updateOutline("yellow")
+
+            if(current == goalIndex):
+                break
+
+            neighbours = self.createNeighbours(current)
+            for neighbour in neighbours:
+                if not neighbour in closedTiles:
+                    if not neighbour in openTilesList:
+                        openTilesList.append(neighbour)
+                    if(self.rectangle[neighbour].getDistance() > self.rectangle[neighbour].getCost() + self.rectangle[current].getDistance()):
+
+                        self.rectangle[neighbour].updateDistance(self.rectangle[neighbour].getCost() + self.rectangle[current].getDistance(), current)
+                        self.rectangle[neighbour].updateOutline("purple")
+
+            closedTiles.append(current)
+
+        self.createFinalPath(current, startIndex)
