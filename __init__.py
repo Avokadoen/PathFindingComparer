@@ -3,16 +3,17 @@ from board import Board
 import random
 import time
 from pathlib import Path
+from functools import partial
 
 # sources:
 # tk mainloop: https://stackoverflow.com/a/29158947
 
-def callback():
-    print ("click!")
+def djikstraInit(board, canvas):
+    board.runDjikstra(canvas)
 
 
-def hello():
-    print ("hello!")
+def aStarInit(board, canvas):
+    board.runAStar(canvas)
 
 def main():
     tk = Tk()
@@ -25,11 +26,11 @@ def main():
     canvas = Canvas(tk, width=500, height=400, bd=0, highlightthickness=0)
     canvas.pack()
 
-    board = Board(canvas, "boards/board-2-1.txt")
+    board = Board(canvas, "board-2-1.txt")
 
-    djikB = Button(tk, text="djikstra's", command=callback)
+    djikB = Button(tk, text="djikstra's", command=partial(djikstraInit, board, canvas))
     djikB.place(anchor="nw", x=screenWidth/3, y=300)
-    aStarB = Button(tk, text="A* ", command=callback)
+    aStarB = Button(tk, text="A* ", command=partial(aStarInit, board, canvas))
     aStarB.place(anchor="nw", x=300, y=300)
 
 
@@ -41,11 +42,18 @@ def main():
     menubar.add_cascade(label="Program", menu=programmenu)
 
     levelsmenu = Menu(menubar, tearoff=0)
-    levelFolder = Path("./boards")
+    levelFolder = Path("./boards/")
     levelsPaths = list(levelFolder.glob('./board*'))
+    loadLevelsFunc = []
+    counter = 0
     for path in levelsPaths:
-        print(str(path))
-        levelsmenu.add_command(label=path, command= lambda: board.createCurrentBoard(canvas, str(path)))
+        _, finalPath = str(path).split("/")
+        levelsmenu.add_command(label=finalPath, command=partial(board.createCurrentBoard, canvas, finalPath))
+
+
+
+
+
     menubar.add_cascade(label="Levels", menu=levelsmenu)
 
     # display the menu
