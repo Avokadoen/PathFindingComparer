@@ -54,7 +54,7 @@ class Board:
         # loop each character and create a rectangle that will represent said character
         while(y < self.height):
             while(x < self.width):
-                if boardpath[6] == "1":
+                if boardpath[6] == "1": # If board doesn't have colored grid
                     if fileContent[y][x] == ".":
                         self.createNoCost(canvas, [x, y], size, "white")
                     elif fileContent[y][x] == "#":
@@ -63,7 +63,7 @@ class Board:
                         self.createCost(canvas, [x, y], size, "red", 0)
                     elif fileContent[y][x] == "B":
                         self.createCost(canvas, [x, y], size, "#42f456", 0)
-                elif boardpath[6] == "2":
+                elif boardpath[6] == "2": # If board has colored grid with different costs
                     if fileContent[y][x] == "r":
                         self.createCost(canvas, [x, y], size, "#998834", 1)
                     elif fileContent[y][x] == "g":
