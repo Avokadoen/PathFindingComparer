@@ -6,4 +6,4 @@ Created and tested on ubuntu 16
 
 # How to run
 Make sure you have python 3>
-Simply do "python3 __init__.py"
+Simply do "python3 \_\_init\_\_.py"
